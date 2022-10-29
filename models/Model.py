@@ -109,6 +109,7 @@ class AbstractModel:
             return True
         return False
 
+
     def _get_daily_option(self, current_date: date) -> Options:
         '''
         Calls the indicator and gets the daily option.
@@ -118,6 +119,7 @@ class AbstractModel:
         '''
 
         return self._indicator.get_option(self._data, current_date)
+
 
     def _daily_loop(self, current_date: date, current_price: float):
         '''
@@ -166,11 +168,22 @@ class AbstractModel:
         self._update_balance(account_variation=account_variance)
         self._set_total_investments(investments_balance)
     
+
     def run_model(self):
         '''
-        runs the model over all the data entry. Results can be accessed by getter methods
+        runs the model over all the data entry. Results can be accessed by getter methods.
+
+        Once again, it's really important that the 'data' propriety be in the correct format
+        (idx, Day, Price) at least
         '''
-        raise NotImplementedError()
+
+        for idx in self._data.index:
+            day = self._data.Day[idx]
+            price = self._data.Price[idx]
+
+            self._daily_loop(day, price)
+
+
 
     def get_daily_results(self) -> pd.DataFrame:
         '''
@@ -183,17 +196,20 @@ class AbstractModel:
 
         return result
 
+
     def get_account_balance(self) -> float:
         '''
         retrieves the latest account balance registered in the model
         '''
         return self._account_balance[-1]
 
+
     def get_investments_value(self) -> float:
         '''
         returns the final invested value registered in the model
         '''
         return self._invested_capital[-1]
+
 
     def get_total_balance(self) -> float:
         '''
