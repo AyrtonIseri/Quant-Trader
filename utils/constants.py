@@ -8,3 +8,12 @@ class Options (Enum):
     BUY = 1
     SELL = -1
     HOLD = 0
+
+class Positions (Enum):
+    '''
+    Positions class. Enumerate all possible states a position can be
+    '''
+    
+    OPEN = 1
+    CLOSED = 0
+    
