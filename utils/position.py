@@ -1,12 +1,12 @@
 from datetime import date
-from constants import Positions
+from constants import Positions, Options
 import numpy as np
 
 class Position:
     '''
     This class represents a position that should be created and managed by a model
     '''
-    def __init__(self, entry_price: float, invested_value: float, initial_date: date):
+    def __init__(self, entry_price: float, invested_value: float, initial_date: date, option: Options):
         '''
         A position contains all information regarding the model's bet.
 
@@ -18,6 +18,7 @@ class Position:
 
         '''
 
+        self._option = option
         self._entry_price = entry_price
         self._initial_date = initial_date
         self._final_date = None
@@ -59,7 +60,10 @@ class Position:
         current_price: stock/currency current price to market.
         '''
 
-        current_profit = (current_price - self._entry_price) / self._entry_price
+        if self._option == Options.BUY:
+            current_profit = (current_price - self._entry_price) / self._entry_price
+        elif self._option == Options.SELL:
+            current_profit = (self._entry_price - current_price) / self._entry_price
 
         self._profit = np.append(self._profit, [current_profit])
 
@@ -68,7 +72,10 @@ class Position:
         Returns the current position overall balance
         '''
 
-        profit_margin = 1 + self._profit[-1]
+        if self._option == Options.BUY:
+            profit_margin = 1 + self._profit[-1]
+        else:
+            profit_margin = self._profit[-1] #Profit margin calculation are different for short operations
         return self._invested_value * profit_margin
 
     def get_profit_history(self) -> np.array:
