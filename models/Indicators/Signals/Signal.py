@@ -5,5 +5,5 @@ class Signal (Indicator):
     '''
     Class that abstracts Signals. Should be inherited by all signal models.
     '''
-    def __init__(self, model: Model):
-        super().__init__(model)
+    def __init__(self:
+        super().__init__()

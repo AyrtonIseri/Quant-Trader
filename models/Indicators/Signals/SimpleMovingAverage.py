@@ -7,7 +7,7 @@ class SimpleMovingAverage (Signal):
     '''
     Indicator that recommends trade based on Simple Moving Average Crossing
     '''
-    def __init__(self, model: Model, fast_curve: int, slow_curve: int):
+    def __init__(self, fast_curve: int, slow_curve: int):
         '''
         :args:
 
@@ -15,7 +15,7 @@ class SimpleMovingAverage (Signal):
         slow_curve: days to consider in rolling_mean of slow curve
 
         '''
-        super().__init__(model)
+        super().__init__()
         self._fc = fast_curve
         self._sc = slow_curve
 
