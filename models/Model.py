@@ -1,11 +1,10 @@
 from datetime import date
-from venv import create
 from Indicators.Indicator import Indicator
 from utils.position import Position, Options
 import pandas as pd
 import numpy as np
 
-class AbstractModel:
+class Model:
     '''
     Model skeleton that should abstract all models interactions with signals
     '''
