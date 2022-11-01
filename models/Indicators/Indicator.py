@@ -2,7 +2,6 @@ from abc import ABC, abstractclassmethod
 import pandas as pd
 from datetime import date
 from utils.constants import Options
-import Model
 
 class Indicator (ABC):
     '''
@@ -44,3 +43,11 @@ class Indicator (ABC):
         Method to implement actual indicator recommendation algorithm.
         '''
         ...
+
+    @abstractclassmethod
+    def min_data_size(self) -> int:
+        '''
+        Returns the minimal dataset size required for the algorithm to work
+        '''
+        ...
+

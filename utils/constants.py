@@ -14,6 +14,6 @@ class Positions (Enum):
     Positions class. Enumerate all possible states a position can be
     '''
     
-    OPEN = 1
-    CLOSED = 0
+    OPEN = True
+    CLOSED = False
     

@@ -1,13 +1,12 @@
-from models import Model
 import pandas as pd
 from models.Model import Model
 
-class AbstractAgent:
+class Agent:
     '''
     Abstraction of the Agent class. Agents and other abstractions should inherit from this class
     '''
     def __init__(self, account_balance: float, models_weights: list[float], models_kwargs: list[dict],
-                 historical_data: pd.Dataframe):
+                 historical_data: pd.DataFrame):
         '''
         Asserts that arguments are consistent and initiate all models listed.
 
@@ -27,7 +26,7 @@ class AbstractAgent:
         self._account_balance = account_balance
         self._data = historical_data
 
-        self._models = [Model(model_kwargs, historical_data=historical_data, 
+        self._models = [Model(**model_kwargs, historical_data=historical_data, 
                         invested_value = account_balance * model_weight) for (model_kwargs, model_weight) in 
                         zip(models_kwargs, models_weights)]
 
@@ -46,6 +45,7 @@ class AbstractAgent:
         '''
         returns the current number of model hold by the agent
         '''
+        
         return self._no_of_models
 
     def get_balance(self) -> float:
@@ -65,6 +65,6 @@ class AbstractAgent:
         return a list of dataframes of size no_of_models that contain all results per model per day (in a dataframe format).
         '''
         
-        results = [model.get_total_balance() for model in self._models]
+        results = [model.get_daily_results() for model in self._models]
         
         return results

@@ -1,4 +1,5 @@
-from Signal import Signal
+from difflib import diff_bytes
+from models.Indicators.Signals.Signal import Signal
 from models.Model import Model
 from utils.constants import Options
 import numpy as np
@@ -44,8 +45,8 @@ class SimpleMovingAverage (Signal):
 
         diff_curve = (fast_curve - slow_curve)
 
-        lastest_diff = np.sign(diff_curve[-2])
-        current_diff = np.sign(diff_curve[-1])
+        current_diff = np.sign(diff_curve.iloc[-1])
+        lastest_diff = np.sign(diff_curve.iloc[-2])
 
         if current_diff > lastest_diff:
             return Options.BUY
@@ -54,3 +55,6 @@ class SimpleMovingAverage (Signal):
             return Options.SELL
 
         return Options.HOLD
+
+    def min_data_size(self) -> int:
+        return self._sc

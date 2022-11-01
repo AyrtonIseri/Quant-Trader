@@ -1,5 +1,5 @@
 from datetime import date
-from constants import Positions, Options
+from utils.constants import Positions, Options
 import numpy as np
 
 class Position:
@@ -24,14 +24,13 @@ class Position:
         self._final_date = None
         self._invested_value = invested_value
         self._profit = np.array([0])
-        self._state = Positions.OPEN
-
+        self._state = True
     def is_open(self) -> bool:
         '''
         Return the positions current state. Either Open or Closed
         '''
 
-        return bool(self._state)
+        return self._state
 
     def close_position(self, final_date: date):
         '''
@@ -41,8 +40,9 @@ class Position:
         final_date: date in which the position was closed
         '''
 
-        self._state = Positions.CLOSED
+        self._state = False
         self._final_date = final_date
+
 
     def get_profit(self) -> float:
         '''
@@ -62,6 +62,7 @@ class Position:
 
         if self._option == Options.BUY:
             current_profit = (current_price - self._entry_price) / self._entry_price
+
         elif self._option == Options.SELL:
             current_profit = (self._entry_price - current_price) / self._entry_price
 

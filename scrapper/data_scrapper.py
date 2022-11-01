@@ -41,7 +41,11 @@ class DataScrapper:
             name = 'bitcoin_historical_data_until_' + date.today().strftime('%d_%m_%Y') + ' '
 
         if url is None:
-            url = 'https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?period1=1635203032&period2=1666739032&interval=1d&events=history&includeAdjustedClose=true'
+            today = date.today()
+            epoch_time = date(1970, 1, 1)
+            period2 = (today - epoch_time).total_seconds()
+            period2 = str(int(period2))
+            url = 'https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?period1=1410825600&period2='+period2+'&interval=1d&events=history&includeAdjustedClose=true'
 
         #generates the complete bash command
         bash_command = bash_command + name + url

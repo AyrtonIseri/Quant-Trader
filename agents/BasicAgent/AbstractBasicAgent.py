@@ -1,6 +1,6 @@
-import AbstractAgent
+import agents.Agent as Agent
 
-class AbstractBasicAgent(AbstractAgent):
+class AbstractBasicAgent(Agent):
     '''
     Abstraction of the Basic Agent class.
 

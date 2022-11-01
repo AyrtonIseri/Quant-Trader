@@ -1,5 +1,6 @@
 from datetime import date
-from Indicators.Indicator import Indicator
+from tkinter import EXCEPTION
+from models.Indicators.Indicator import Indicator
 from utils.position import Position, Options
 import pandas as pd
 import numpy as np
@@ -35,6 +36,7 @@ class Model:
         self._no_of_positions = 0
         self._indicator = indicator
         self._data = historical_data
+        self._complete = False
 
 
     def _create_position(self, price: float, value_to_invest:float, date: date, option: Options):
@@ -154,7 +156,7 @@ class Model:
         new_option = self._get_daily_option(current_date=current_date)
 
         if new_option != Options.HOLD:
-            new_investments += self._account_balance * self._percentage_to_invest
+            new_investments += self.get_account_balance() * self._percentage_to_invest
             self._create_position(price=current_price, date=current_date, 
                                   option=new_option, value_to_invest=new_investments)
 
@@ -163,7 +165,6 @@ class Model:
 
         account_variance = realized_investments - new_investments
         investments_balance += new_investments
-
         self._update_balance(account_variation=account_variance)
         self._set_total_investments(investments_balance)
     
@@ -176,11 +177,21 @@ class Model:
         (idx, Day, Price) at least
         '''
 
-        for idx in self._data.index:
+        min_data_size = self._indicator.min_data_size()
+
+
+        for idx in self._data[min_data_size:].index:
             day = self._data.Day[idx]
             price = self._data.Price[idx]
 
             self._daily_loop(day, price)
+
+            if self.get_total_balance() < 0:
+                current_balance = self.get_total_balance()
+                print(f'you lost all your money. Current balance: {current_balance} at day {idx}')
+                raise Exception('LOSER!')
+
+        self._complete = True
 
 
 
@@ -188,8 +199,12 @@ class Model:
         '''
         Returns both account and investments balance in a pd.DataFrame format
         '''
+        if not self._complete:
+            raise Exception('You should run the model before trying to get the results')
 
-        result = pd.DataFrame({'Day': self._data.Day,
+        min_data_size = self._indicator.min_data_size()
+
+        result = pd.DataFrame({'Day': self._data[min_data_size-1:].Day,
                                'account_balance': self._account_balance,
                                'investments_balance': self._invested_capital})
 
