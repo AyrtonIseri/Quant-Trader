@@ -36,3 +36,4 @@ agent.run()
 for model in agent._models:
     print(model.get_account_balance())
 
+
