@@ -19,24 +19,23 @@ class splitter:
 
         self._validation_size = validation_size
 
-    def split_dataset(self, dataframe: pd.DataFrame, include_targets: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def split_dataset(self, dataframe: pd.DataFrame, include_targets: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
         '''
         split method to separate train and test datasets. Returns a tuple (train_dataset, test_dataset)
 
         :args:
 
         dataframe: dataframe that requires splitting method.
+        
         include_targets: bool variable that indicates whether x and y datasets should be segregated.
         '''
-        
-        sorted_df = dataframe.sort_values('date')
 
         train_dataset_size = int(len(dataframe) * (1 - self._validation_size))
         test_dataset_size = len(dataframe) - train_dataset_size
 
 
-        train_dataset = sorted_df.iloc[:train_dataset_size]
-        test_dataset = sorted_df.iloc[-test_dataset_size:]
+        train_dataset = dataframe.iloc[:train_dataset_size]
+        test_dataset = dataframe.iloc[-test_dataset_size:]
 
         if include_targets:
             x_train_dataset, y_train_dataset = train_dataset.drop('Classification', axis=1), train_dataset.Classification
