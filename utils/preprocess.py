@@ -1,15 +1,45 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+
+import torch
+from torch import nn
+from torch.utils.data import Dataset
+
 from utils.data_split import splitter
 from collections import deque
 from tqdm import tqdm
 from random import shuffle
+
+
 pd.set_option('use_inf_as_na',True)
 
 def _assert_df_format(dataframe: pd.DataFrame):
     if 'Classification' not in dataframe.columns:
         raise KeyError('Classification column not found in offered dataframe')
+
+class RNNDataset(Dataset):
+    def __init__(self, sequences: torch.tensor, labels: torch.tensor, transform = None, target_transform = None):
+        self._labels = labels
+        self._sequence = sequences
+        self._transform = transform
+        self._target_transform = target_transform
+
+    def __len__(self):
+        return len(self._labels)
+
+    def __getitem__(self, idx: int):
+        sequence = self._sequence[idx]
+        label = self._labels[idx]
+
+        if self._transform:
+            sequence = self._transform(sequence)
+        
+        if self._target_transform:
+            label = self._target_transform(label)
+
+        return sequence, label
+
 
 class preprocess:
     '''
@@ -33,7 +63,7 @@ class preprocess:
 
         self._seq_len = sequence_length
 
-    def preprocess(self, dataframe: pd.DataFrame, validation_size: float = 0.10) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def preprocess(self, dataframe: pd.DataFrame, validation_size: float = 0.10) -> tuple[RNNDataset, RNNDataset]:
         '''
         preprocessing method. Will first scale, then normalize and finally sequentiate the data. Returns X_train, y_train, X_test, y_test
 
@@ -48,13 +78,19 @@ class preprocess:
 
         dataframe_splitter = splitter(validation_size=validation_size)
         X_train, y_train, X_test, y_test = dataframe_splitter.split_dataset(dataframe=dataframe, include_targets=True)
-        
+
         X_train, X_test = self._scale(X_train, X_test)
 
         training_dataset = self._sequentiate(X_train, y_train, sequence_length= self._seq_len)
         testing_dataset = self._sequentiate(X_test, y_test, sequence_length= self._seq_len)
 
-        return training_dataset, testing_dataset
+        X_train, y_train = self._apply_tensor(training_dataset)
+        train_dataset = RNNDataset(sequences= X_train, labels= y_train)
+
+        X_test, y_test = self._apply_tensor(testing_dataset)
+        test_dataset = RNNDataset(sequences=X_test, labels=y_test)
+
+        return train_dataset, test_dataset
         
 
     def _handle_date(self, dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -120,4 +156,22 @@ class preprocess:
             if len(stack) == sequence_length:
                 sequential_data.append([np.array(stack), y[idx]])
 
+        shuffle(sequential_data)
+
         return np.array(sequential_data)
+
+    def _apply_tensor(self, dataset: np.array):
+        '''
+        Converts the dataset into a tensor containing the all sequences and labels (one hot encoded)
+        '''
+
+        labels = [label[1] for label in dataset]
+        sequences = np.array([sequence[0] for sequence in dataset])
+
+        y_tensor = torch.tensor(labels, dtype=torch.int64)
+        y_tensor_ohe = nn.functional.one_hot(y_tensor).double()
+
+        X_tensor = torch.from_numpy(sequences)
+
+        return X_tensor, y_tensor_ohe
+
