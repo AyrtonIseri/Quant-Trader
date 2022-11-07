@@ -19,18 +19,29 @@ def _assert_df_format(dataframe: pd.DataFrame):
         raise KeyError('Classification column not found in offered dataframe')
 
 class RNNDataset(Dataset):
-    def __init__(self, sequences: torch.tensor, labels: torch.tensor, transform = None, target_transform = None):
+    def __init__(self, inputs: torch.tensor, labels: torch.tensor, seq_len: int, transform = None, 
+                 target_transform = None, beg: int = 0, end: int = None):
+
+        if end is None:
+            end = len(labels)
+
+        if ((end - beg) > len(labels)) or (beg < 0) or (end > len(labels)):
+            raise KeyError(f'tensor indexing is currently unnaceptable at beginning: {beg} and ending: {end} with tensor length of {len(labels)}')
+        
         self._labels = labels
-        self._sequence = sequences
+        self.inputs = inputs
+        self._seq_len = seq_len
         self._transform = transform
         self._target_transform = target_transform
+        self._beg = beg
+        self._end = end
 
     def __len__(self):
-        return len(self._labels)
+        return self._end - self._beg - self._seq_len + 2
 
     def __getitem__(self, idx: int):
-        sequence = self._sequence[idx]
-        label = self._labels[idx]
+        sequence = self._sequence[idx+self._beg: idx+self._seq_len+self._beg]
+        label = self._labels[idx+self._seq_len - 1 + self._beg]
 
         if self._transform:
             sequence = self._transform(sequence)
