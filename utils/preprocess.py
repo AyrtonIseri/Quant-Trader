@@ -84,10 +84,10 @@ class preprocess:
         training_dataset = self._sequentiate(X_train, y_train, sequence_length= self._seq_len)
         testing_dataset = self._sequentiate(X_test, y_test, sequence_length= self._seq_len)
 
-        X_train, y_train = self._apply_tensor(training_dataset)
+        X_train, y_train = self._apply_tensor(training_dataset, training=True)
         train_dataset = RNNDataset(sequences= X_train, labels= y_train)
 
-        X_test, y_test = self._apply_tensor(testing_dataset)
+        X_test, y_test = self._apply_tensor(testing_dataset, training=False)
         test_dataset = RNNDataset(sequences=X_test, labels=y_test)
 
         return train_dataset, test_dataset
@@ -160,7 +160,7 @@ class preprocess:
 
         return np.array(sequential_data)
 
-    def _apply_tensor(self, dataset: np.array):
+    def _apply_tensor(self, dataset: np.array, training: bool):
         '''
         Converts the dataset into a tensor containing the all sequences and labels (one hot encoded)
         '''
@@ -169,9 +169,12 @@ class preprocess:
         sequences = np.array([sequence[0] for sequence in dataset])
 
         y_tensor = torch.tensor(labels, dtype=torch.int64)
-        y_tensor_ohe = nn.functional.one_hot(y_tensor).double()
 
-        X_tensor = torch.from_numpy(sequences)
+        if training:
+            y_tensor = nn.functional.one_hot(y_tensor)
 
-        return X_tensor, y_tensor_ohe
+        X_tensor = torch.from_numpy(sequences).to(torch.float32)
+        y_tensor = y_tensor.float()
+
+        return X_tensor, y_tensor
 
