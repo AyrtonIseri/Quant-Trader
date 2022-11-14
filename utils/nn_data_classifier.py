@@ -1,8 +1,7 @@
 import pandas as pd
-import datetime
-from utils.constants import Options
-from numba import jit
 import numpy as np
+from numba import jit
+
 
 def load_data():
 
@@ -14,6 +13,32 @@ def load_data():
     data.sort_values('Day', inplace=True)
 
     return data
+
+
+def shift(arr, num) -> np.array:
+    '''
+    shifts a numpy array and replaces empty values with NaNs
+
+    args:
+
+    arr: array to be shifted
+    num: number of shifts to perform
+    '''
+
+    fill_value=np.nan
+    result = np.empty_like(arr)
+    if num > 0:
+        result[:num] = fill_value
+        result[num:] = arr[:-num]
+    elif num < 0:
+        result[num:] = fill_value
+        result[:num] = arr[-num:]
+    else:
+        result[:] = arr
+
+    result = result[~np.isnan(result)]
+
+    return result
 
 @jit(nopython=True)
 def _made_profit(current_price: float, future_price: float, mr: float) -> bool:
@@ -66,21 +91,114 @@ def get_classification_array(price_array: np.array, max_drop: float, max_raise: 
 
     return new_array
 
+def get_strict_class(price_data: np.array, time_window: int, extra_class: bool = False, threshold: float = None) -> np.array:
+    '''
+    function to operate inside an array and classify based on a future time window whether the stock raised or dropped.
+
+    args:
+
+    price_data: numpy array containing the historical data.
+
+    time_window: time value to perform the classification
+
+    extra_class: boolean to consider or not more than 2 classes.
+
+    threshold: min vaue to be classified as a new class.
+    '''
+
+    if extra_class:
+        classify = lambda n: 0 if n < -threshold else 1 if n < 0 else 2 if n < threshold else 3
+    else:
+        classify = lambda n: 1 if n >= 0 else 0
+
+    classify = np.vectorize(classify)
+
+    future_prices = shift(price_data, -time_window)
+
+    price_data = price_data[:-time_window]
+
+    diff_array = (future_prices - price_data)/price_data
+    return classify(diff_array)
+
+
 class Classifier:
-    def __init__(self, max_drop: float, max_raise: float, max_period: int = 10):
+    def __init__(self, dataframe: pd.DataFrame):
+        '''
+        Classifier object. Receives a dataframe containing the price variable and classifies whether
+        an event occured. The classification is returned in a new column called 'Classification'
+        This event can be a raise, a drop, a maintainance in any personalized manner.
+
+        args:
+
+        dataframe: pd.Dataframe containing a 'price' column to be classified.
+        '''
+        
+        assert('Price' in dataframe.columns)
+
+        self._dataframe = dataframe
+
+    def classify_data_rd(self, max_drop: float, max_raise: float, max_period: int = 10):
+        '''
+        Classifies the dataset according to its maximum raises and drops in stock/share price.
+        Uses the mr and md parameters to determine when an event occured during a max_period.
+        '''
 
         assert((max_drop < 0) and (max_drop > -1))
         assert((max_raise >0))
         assert((max_period>0))
 
-        self._md = max_drop
-        self._mr = max_raise
-        self._max_period = max_period
+        res = self._dataframe
+        res['Classification'] = get_classification_array(self._dataframe['Price'].to_numpy(), max_drop, max_raise, max_period)
 
-    def classify_data(self, dataframe: pd.DataFrame):
+        return res
 
-        dataframe['Classification'] = get_classification_array(dataframe['Price'].to_numpy(), self._md, self._mr, self._max_period)
-        return dataframe
+    def classify_data_strict_time(self, time_outlook: int, extra_classes: bool = False, threshold: float = None):
+        '''
+        Classify on a strict future basis whether a stock raised or dropped. If desired, there can still be another classification for
+        rocket-raises and stock-plummets
 
+        decoding:
+        
+        in case there is no extra class:
+        0 -> dropped
+        1 -> raised
 
+        otherwise:
+        0 -> big drop
+        1 -> common drop
+        2 -> common raise
+        3 -> big raise
 
+        args:
+
+        time_outlook: period of time to analyze the stock movement. Time units will be the same as dataframe's date column.
+
+        extra_clases: indicates if the model should classify big stock movements. Defaults to false.
+        If set to true, threshold parameter should be passed as well.
+
+        threshold: percentual float that determines what is considered a movement big enough to move to another class. 
+        Must be passed if extra_class is true. 
+        '''
+
+        res = self._dataframe
+        
+
+        if extra_classes:
+            if threshold is None:
+                raise ValueError('if extra classification is wanted, you must pass a threshold variable')
+
+            if type(threshold) != float:
+                raise TypeError(r'Threshold should be a float specifying the min. stock movement required (in % change) ')
+
+            assert(threshold > 0)
+        
+            Classification = get_strict_class(res['Price'].to_numpy(), time_window=time_outlook,
+                                                     extra_class=True, threshold=threshold)
+        
+        else:
+            Classification = get_strict_class(res['Price'].to_numpy(), time_window=time_outlook)
+
+        res = res[:-time_outlook]
+        res.loc[:, 'Classification'] = Classification
+
+        return res
