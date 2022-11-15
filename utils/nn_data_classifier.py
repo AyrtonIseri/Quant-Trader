@@ -7,7 +7,8 @@ def load_data():
 
     data_path = 'historicals/BTC-Min.csv'
 
-    data = pd.read_csv(data_path, usecols=['date', 'close', 'open', 'high', 'low', 'Volume USD', 'Volume BTC'], parse_dates=['date'], infer_datetime_format=True)
+    # data = pd.read_csv(data_path, usecols=['date', 'close', 'open', 'high', 'low', 'Volume USD', 'Volume BTC'], parse_dates=['date'], infer_datetime_format=True)
+    data = pd.read_csv(data_path, usecols=['date', 'close', 'open', 'Volume USD'], parse_dates=['date'], infer_datetime_format=True)
     data.rename(columns={'date': 'Day', 'close': 'Price', 'Volume USD': 'Volume'}, inplace=True)
 
     data.sort_values('Day', inplace=True)
