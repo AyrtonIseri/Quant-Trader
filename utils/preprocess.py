@@ -128,8 +128,9 @@ class preprocess:
         '''
         method to handle dates in the sequenced data (temporarilly deleting this axis)
         '''
-        if 'Day' in dataframe.columns:
-            return dataframe.drop('Day', axis=1)
+        if 'time' in dataframe.columns:
+            return dataframe.drop('time', axis=1)
+        return dataframe
 
 
     def _scale(self, X_train: pd.DataFrame, X_test: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

@@ -3,19 +3,38 @@ import numpy as np
 from numba import jit
 
 
-def load_data():
+def load_BTC():
 
-    data_path = 'historicals/BTC-Min.csv'
+    data_path = 'historicals/btcusd.csv'
 
     # data = pd.read_csv(data_path, usecols=['date', 'close', 'open', 'high', 'low', 'Volume USD', 'Volume BTC'], parse_dates=['date'], infer_datetime_format=True)
-    data = pd.read_csv(data_path, usecols=['date', 'close', 'open', 'Volume USD'], parse_dates=['date'], infer_datetime_format=True)
-    data.rename(columns={'date': 'Day', 'close': 'Price', 'Volume USD': 'Volume'}, inplace=True)
+    data = pd.read_csv(data_path, usecols=['time', 'close', 'volume'])
+    data.rename(columns={'close': 'Price_BTC', 'volume': 'Volume_BTC'}, inplace=True)
 
-    data.sort_values('Day', inplace=True)
+    data.sort_values('time', inplace=True)
 
     return data
 
+def load_ETH():
+    data_path = 'historicals/ethusd.csv'
 
+    data = pd.read_csv(data_path, usecols=['time', 'close', 'volume'])
+    data.rename(columns={'close': 'Price', 'volume': 'Volume_ETH'}, inplace=True)
+
+    data.sort_values('time', inplace=True)
+
+    return data
+
+def load_data():
+    BTC = load_BTC()
+    ETH = load_ETH()
+
+    data = pd.merge(left = ETH, right = BTC, how = 'left', on = 'time').dropna()
+    data['time'] = pd.to_datetime(data.time, unit='ms')
+
+    return data
+
+    
 def shift(arr, num) -> np.array:
     '''
     shifts a numpy array and replaces empty values with NaNs
