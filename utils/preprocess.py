@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.nn.functional import one_hot
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 from utils.data_split import splitter
 from collections import deque
@@ -94,9 +95,15 @@ class preprocess:
         dataframe = self._handle_date(dataframe)
 
         #Inputs and labels of the classification
-        features = torch.from_numpy(dataframe.drop('Classification', axis = 1).to_numpy()).float()
-        labels = torch.from_numpy(dataframe.Classification.to_numpy()).to(torch.int64)
+        features = dataframe.drop('Classification', axis = 1)
+        labels = dataframe.Classification
+        
+        features_average = np.array([average for average in features.mean()])
+        features_std = np.array([std for std in features.std()])
+        features = self._normalize(features, mean=features_average, std=features_std)
 
+        features = torch.from_numpy(features.to_numpy()).float()
+        labels = torch.from_numpy(labels.to_numpy()).to(torch.int64)
 
         #getting datasets' indexes on tensors.
         val_ds_beg, test_ds_beg = self._get_splitters(dataframe, validation_size, testing_size) #validation and test dataset tensor beginning index
@@ -132,25 +139,17 @@ class preprocess:
             return dataframe.drop('time', axis=1)
         return dataframe
 
-
-    def _scale(self, X_train: pd.DataFrame, X_test: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def _normalize(self, X: pd.DataFrame, mean: np.array, std: np.array):
         '''
-        Method to standard-scale (0 mean - 1 std) the data according to the X_train dataframe. 
-        
-        This method assures that data leakage won't happen
+        Normalizes the sequences dataset.
 
         :args:
 
-        X_train: dataframe that contains the train data
-        
-        X_test: dataframe that contains the test data
+        X: dataframe to be normalized. Size: (instances, features)
+        mean: array containing the mean. Size: (features)
+        std: array containing the standard deviation. Size: (features)
         '''
-        for column in X_train.columns:
-            scaler = StandardScaler()
-            scaler.fit(X_train[column].to_numpy().reshape(-1, 1))
-            X_train[column] = scaler.transform(X_train[column].to_numpy().reshape(-1, 1))
-            X_test[column] = scaler.transform(X_test[column].to_numpy().reshape(-1, 1))
-        
-        return X_train, X_test
+
+        return (X - mean)/std
 
 
